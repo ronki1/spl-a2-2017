@@ -1,6 +1,9 @@
 package bgu.spl.a2;
 
+import bgu.spl.a2.test.MergeSort;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
@@ -22,10 +25,12 @@ public abstract class Task<R> {
     protected Processor handler;
     protected boolean started=false,running=false;
     protected Runnable whenResolvedCallback;
-    protected Deferred defferedObj;
+    protected Deferred defferedObj = new Deferred();
     private int numOfSubtasksWaiting = 0;
     private CountDownLatch latch;
     private int waitingCounter;
+    protected ArrayList<Task> tasksDependsOn = new ArrayList<>();
+    protected boolean runCallback = false;
     /**
      * start handling the task - note that this method is protected, a handler
      * cannot call it directly but instead must use the
@@ -50,15 +55,6 @@ public abstract class Task<R> {
      */
     /*package*/ final void handle(Processor handler) {
         this.handler = handler;
-        if(!started) {
-            started = true;
-            running=true;
-            start();
-        }
-        if(started) {
-            running=true;
-            start();
-        }
     }
 
     /**
@@ -71,6 +67,11 @@ public abstract class Task<R> {
         for (int i=0; i< task.length; i++) {
             handler.addTask(task[i]);
         }
+//        if(this.getWaitingCounter()>0) handler.rescheduleTask(this);
+        System.out.println("task order spawned");
+//        for (Task t2 : handler.tasks) {
+            //System.out.println("Task Rescheduled, Processor "+ handler +" tasks: "+t2.toString());
+//        }
     }
 
     /**
@@ -90,12 +91,14 @@ public abstract class Task<R> {
         waitingCounter = tasks.size();
         numOfSubtasksWaiting+=tasks.size();
         for (Task<?> t : tasks) {
+            tasksDependsOn.add(t);
             //if (t.getResult().isResolved()) waitingCounter--;
             //TODO if using latches, decrease num
             t.getResult().whenResolved(()->{
                 Task.this.subTaskFinished(this);
             });
         }
+        running = false;
         handler.rescheduleTask(this);
     }
 
@@ -106,6 +109,7 @@ public abstract class Task<R> {
      * @param result - the task calculated result
      */
     protected final void complete(R result) {
+        System.out.println(this.handler + " Resolved Task with: "+ this.toString());
         defferedObj.resolve(result);
         handler.taskEnded(this);
     }
@@ -124,7 +128,28 @@ public abstract class Task<R> {
      */
     protected synchronized void subTaskFinished(Task t) {
         waitingCounter--;
-        if(waitingCounter==0) whenResolvedCallback.run();
+        if(waitingCounter == 0) {
+            runCallback = true;
+        }
     }
 
+    public int getWaitingCounter() {
+        return waitingCounter;
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
+    }
+
+    public void setStarted(boolean started) {
+        this.started = started;
+    }
+
+    public boolean isStarted() {
+        return started;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
 }

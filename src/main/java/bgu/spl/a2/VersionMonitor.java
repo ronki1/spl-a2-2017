@@ -32,7 +32,7 @@ public class VersionMonitor {
     }
 
     public void await(int version) throws InterruptedException {
-        while (this.version<=version) {
+        while (this.version<version) {
             synchronized (this) {
                 wait();
             }

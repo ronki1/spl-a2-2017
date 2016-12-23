@@ -50,8 +50,9 @@ public class WorkStealingThreadPool {
      * @param task the task to execute
      */
     public void submit(Task<?> task) {
-        int taskToBeSubmitted = (int) Math.random()*this.nthreads;
+        int taskToBeSubmitted = (int) (Math.random()*this.nthreads);
         processors[taskToBeSubmitted].addTask(task);
+        vm.inc();
     }
 
     /**
@@ -67,8 +68,9 @@ public class WorkStealingThreadPool {
      * shutdown the queue is itself a processor of this queue
      */
     public void shutdown() throws InterruptedException {
-        //TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
+        for (int i=0; i<nthreads; i++) {
+            threads[i].interrupt();
+        }
     }
 
     /**
@@ -85,9 +87,17 @@ public class WorkStealingThreadPool {
      * @param t
      */
     protected void taskEnded(Task t) {
-        if(!t.handler.hasTasksLeft()) { //if no tasks were left->steal
-            t.handler.startSteal();
+        if((!t.handler.hasTasksLeft()) && nthreads>1) { //if no tasks were left->steal
+            //t.handler.startSteal();
         }
+        vm.inc();
+    }
+
+    /**
+     * notifies that a task was spawned
+     * @param t the task that was spawned
+     */
+    protected void taskSpawned(Task t) {
         vm.inc();
     }
 
@@ -104,7 +114,7 @@ public class WorkStealingThreadPool {
      * @param t
      */
     protected void taskRescheduled(Task t) {
-
+        vm.inc();
     }
 
     public Processor[] getProcessors() {
