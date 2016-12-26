@@ -96,36 +96,38 @@ public class MergeSort extends Task<int[]> {
         }
     }
     public static void main(String[] args) throws InterruptedException {
-        WorkStealingThreadPool pool = new WorkStealingThreadPool(1);
-        int n = 40000; //you may check on different number of elements if you like
-        int[] array = new Random().ints(n).toArray();
-        //array = new int[]{12,11,10,9,8,7,6,5,4,3,2,1,0};
+        //for(int q=0; q<=100; q++) {
+            WorkStealingThreadPool pool = new WorkStealingThreadPool(4);
+            int n = (int) (Math.random()*100000); //you may check on different number of elements if you like
+            int[] array = new Random().ints(n).toArray();
+            //array = new int[]{12,11,10,9,8,7,6,5,4,3,2,1,0};
 
-        MergeSort task = new MergeSort(array);
+            MergeSort task = new MergeSort(array);
 
-        CountDownLatch l = new CountDownLatch(1);
-        pool.start();
-        pool.submit(task);
-        task.getResult().whenResolved(() -> {
-            //warning - a large print!! - you can remove this line if you wish
-            int[] arr = task.getResult().get();
-            System.out.println("Merge Sort Finished! Result: "+Arrays.toString(task.getResult().get()));
-            System.out.println("Checking");
-            boolean failed = false;
-            for(int j=0; j<arr.length-1;j++) {
-                if(arr[j]> arr[j+1])  {
-                    System.out.println("Check Failed");
-                    failed = true;
-                    break;
+            CountDownLatch l = new CountDownLatch(1);
+            pool.start();
+            pool.submit(task);
+            task.getResult().whenResolved(() -> {
+                //warning - a large print!! - you can remove this line if you wish
+                int[] arr = task.getResult().get();
+                System.out.println("Merge Sort Finished! Result: " + Arrays.toString(task.getResult().get()));
+                System.out.println("Checking");
+                boolean failed = false;
+                for (int j = 0; j < arr.length - 1; j++) {
+                    if (arr[j] > arr[j + 1]) {
+                        System.out.println("Check Failed");
+                        failed = true;
+                        break;
+                    }
                 }
-            }
-            if(!failed) System.out.println("Success");
-            l.countDown();
-        });
+                if (!failed) System.out.println("Success");
+                l.countDown();
+            });
 
-        l.await();
-        pool.shutdown();
+            l.await();
+            pool.shutdown();
         }
+        //}
 
     @Override
     public String toString() {
