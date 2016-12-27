@@ -8,6 +8,7 @@ package bgu.spl.a2.sim;
 import bgu.spl.a2.WorkStealingThreadPool;
 import bgu.spl.a2.sim.conf.ManufactoringPlan;
 import bgu.spl.a2.sim.tasks.ProductTask;
+import bgu.spl.a2.sim.tasks.WaveTask;
 import bgu.spl.a2.sim.tools.GcdScrewDriver;
 import bgu.spl.a2.sim.tools.NextPrimeHammer;
 import bgu.spl.a2.sim.tools.RandomSumPliers;
@@ -18,7 +19,11 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 
 
 /**
@@ -28,13 +33,39 @@ public class Simulator {
 
     private static WorkStealingThreadPool pool;
     private static Warehouse warehouse = new Warehouse();
+    private static ArrayList<Wave> waves;
 
     /**
      * Begin the simulation
      * Should not be called before attachWorkStealingThreadPool()
      */
     public static ConcurrentLinkedQueue<Product> start() {
+        ConcurrentLinkedQueue<Product> cq = new ConcurrentLinkedQueue();
+        try {
+            CountDownLatch l = new CountDownLatch(1);
+            pool.start();
+            WaveTask firstWave = new WaveTask(0, waves, warehouse);
+            firstWave.getResult().whenResolved(() -> {
+                //warning - a large print!! - you can remove this line if you wish
+                cq.addAll(firstWave.getResult().get());
+                for (Product p : firstWave.getResult().get()) {
+                    System.out.println(p.getName() + ". StartID: " + p.getStartId() + ". FinalID: " + p.getFinalId());
+                    System.out.println("Parts: {");
+                    for (Product pp : p.getParts()) {
+                        System.out.println(pp.getName() + ". StartID: " + pp.getStartId() + ". FinalID: " + pp.getFinalId());
+                    }
+                    System.out.println("}");
+                }
+                l.countDown();
+            });
+            pool.submit(firstWave);
 
+            l.await();
+            pool.shutdown();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return cq;
     }
 
     /**
@@ -46,7 +77,7 @@ public class Simulator {
         pool = myWorkStealingThreadPool;
     }
 
-    public static int main(String[] args) {
+    public static void main(String[] args) {
         try {
             String file = new String(Files.readAllBytes(Paths.get(args[0])));
 
@@ -86,15 +117,21 @@ public class Simulator {
 
             WorkStealingThreadPool newPool = new WorkStealingThreadPool(numOfThreads);
 
+            waves = new ArrayList<>();
             JSONArray wavesArray = mainObj.getJSONArray("waves");
             for (int i = 0; i < wavesArray.length(); i++) {
+                List<Integer> startIds = new ArrayList<>();
+                List<Integer> qtys = new ArrayList<>();
+                List<String> names = new ArrayList<>();
+
                 JSONArray waveArray = wavesArray.getJSONArray(i);
                 for (int j = 0; j < waveArray.length(); j++) {
                     JSONObject productObj = waveArray.getJSONObject(j);
-                    for (int k = 0; k < productObj.getInt("qty"); k++) {
-                        newPool.submit(new ProductTask(productObj.getString("product"), productObj.getInt("startId")+k,warehouse));
-                    }
+                        startIds.add(productObj.getInt("startId"));
+                        qtys.add(productObj.getInt("qty"));
+                        names.add(productObj.getString("product"));
                 }
+                waves.add(new Wave(startIds, qtys, names));
             }
 
             attachWorkStealingThreadPool(newPool);
@@ -105,6 +142,6 @@ public class Simulator {
 
         //TODO waves
 
-        return 0; //TODO ??
+//        return 0; //TODO ??
     }
 }

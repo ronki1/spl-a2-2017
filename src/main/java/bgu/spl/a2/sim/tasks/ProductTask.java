@@ -43,20 +43,47 @@ public class ProductTask extends Task<Product> {
             spawns[j] = task;
             spawns2.add(task);
         }
-        this.whenResolved(spawns2,()->{
-            ArrayList<String> sortedTools = new ArrayList<String>();
-            for (int i = 0; i < mp.getTools().length; i++) {
-                sortedTools.add(mp.getTools()[i]);
+        if(spawns.length != 0) {
+            this.whenResolved(spawns2, () -> {
+                if(mp.getTools().length != 0) {
+                    ArrayList<String> sortedTools = new ArrayList<String>();
+                    for (int i = 0; i < mp.getTools().length; i++) {
+                        sortedTools.add(mp.getTools()[i]);
+                    }
+                    Collections.sort(sortedTools);
+                    for (String tool : sortedTools) {
+                        Deferred<Tool> toolDeferred = warehouse.acquireTool(tool);
+                        toolDeferred.whenResolved(() -> {
+                            toolAcquired(toolDeferred.get(), spawns2);
+                        });
+                    }
+                }
+                else {
+                    Product p1 = new Product(startId,name);
+                    complete(p1);
+                }
+            });
+            this.spawn(spawns);
+        }
+        else {
+            if(mp.getTools().length != 0) {
+                ArrayList<String> sortedTools = new ArrayList<String>();
+                for (int i = 0; i < mp.getTools().length; i++) {
+                    sortedTools.add(mp.getTools()[i]);
+                }
+                Collections.sort(sortedTools);
+                for (String tool : sortedTools) {
+                    Deferred<Tool> toolDeferred = warehouse.acquireTool(tool);
+                    toolDeferred.whenResolved(() -> {
+                        toolAcquired(toolDeferred.get(), spawns2);
+                    });
+                }
             }
-            Collections.sort(sortedTools);
-            for (String tool : sortedTools) {
-                Deferred<Tool> toolDeferred = warehouse.acquireTool(tool);
-                toolDeferred.whenResolved(()->{
-                    toolAcquired(toolDeferred.get(),spawns2);
-                });
+            else {
+                Product p1 = new Product(startId,name);
+                complete(p1);
             }
-        });
-        this.spawn(spawns);
+        }
 
     }
 
@@ -65,6 +92,7 @@ public class ProductTask extends Task<Product> {
         for (ProductTask p : pArr) {
             finalId+= Math.abs(t.useOn(p.getResult().get()));
         }
+        warehouse.releaseTool(t);
         if (waitingRemaining == 0){
             Product p1 = new Product(startId,name);
             p1.setFinalId(startId+finalId);

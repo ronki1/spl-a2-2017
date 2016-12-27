@@ -9,7 +9,7 @@ import java.util.List;
 public class Product {
 	private String name;
 	private long startId;
-	private long finalId = 0;
+	private long finalId;
 
 	List<Product> parts = new ArrayList<>();
 

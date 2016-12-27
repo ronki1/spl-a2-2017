@@ -13,18 +13,36 @@ public class NextPrimeHammer implements Tool {
 
     @Override
     public long useOn(Product p) {
-        long n = p.getStartId();
+        long n = p.getFinalId();
         boolean isPrime = false;
-        while (!isPrime) {
-            n++;
-            isPrime = true;
-            for (int i = 2; i * i <= n; i++) {
-                if (n % i == 0) {
-                    isPrime = false;
-                    break;
-                }
+        long v =p.getFinalId() + 1;
+        while (!isPrime(v)) {
+            v++;
+        }
+
+        return v;
+//        while (!isPrime) {
+//            n++;
+//            isPrime = true;
+//            for (int i = 2; i * i <= n; i++) {
+//                if (n % i == 0) {
+//                    isPrime = false;
+//                    break;
+//                }
+//            }
+//        }
+//        return n;
+    }
+
+    private boolean isPrime(long value) {
+        long sq = (long) Math.sqrt(value);
+        for (long i = 2; i < sq; i++) {
+            if (value % i == 0) {
+                return false;
             }
         }
-        return n;
+
+        return true;
     }
+
 }
