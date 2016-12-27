@@ -7,6 +7,7 @@ package bgu.spl.a2.sim;
 
 import bgu.spl.a2.WorkStealingThreadPool;
 import bgu.spl.a2.sim.conf.ManufactoringPlan;
+import bgu.spl.a2.sim.tasks.ProductTask;
 import bgu.spl.a2.sim.tools.GcdScrewDriver;
 import bgu.spl.a2.sim.tools.NextPrimeHammer;
 import bgu.spl.a2.sim.tools.RandomSumPliers;
@@ -17,7 +18,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
@@ -92,12 +92,13 @@ public class Simulator {
                 for (int j = 0; j < waveArray.length(); j++) {
                     JSONObject productObj = waveArray.getJSONObject(j);
                     for (int k = 0; k < productObj.getInt("qty"); k++) {
-                        newPool.submit(new ProductTask(productObj.getString("product"), productObj.getInt("startId")));
+                        newPool.submit(new ProductTask(productObj.getString("product"), productObj.getInt("startId")+k,warehouse));
                     }
                 }
             }
 
             attachWorkStealingThreadPool(newPool);
+            start();
         } catch (IOException e) {
             e.printStackTrace();
         }

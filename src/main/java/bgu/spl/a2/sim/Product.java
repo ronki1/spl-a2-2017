@@ -21,6 +21,7 @@ public class Product {
     public Product(long startId, String name) {
     	this.name = name;
     	this.startId = startId;
+    	this.finalId = startId;
 	}
 
 	/**
@@ -59,6 +60,10 @@ public class Product {
     public void addPart(Product p) {
 		parts.add(p);
 	}
+
+	public void setFinalId(long num) {
+        this.finalId = num;
+    }
 
 
 }
