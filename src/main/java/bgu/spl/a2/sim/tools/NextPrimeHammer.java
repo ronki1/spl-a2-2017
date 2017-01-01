@@ -21,19 +21,13 @@ public class NextPrimeHammer implements Tool {
         }
 
         return v;
-//        while (!isPrime) {
-//            n++;
-//            isPrime = true;
-//            for (int i = 2; i * i <= n; i++) {
-//                if (n % i == 0) {
-//                    isPrime = false;
-//                    break;
-//                }
-//            }
-//        }
-//        return n;
     }
 
+    /**
+     * Checks whether a number is prime
+     * @param value
+     * @return
+     */
     private boolean isPrime(long value) {
         long sq = (long) Math.sqrt(value);
         for (long i = 2; i <= sq; i++) {

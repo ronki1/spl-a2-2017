@@ -23,7 +23,8 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
  *
  */
 public class Warehouse {
-	private AtomicIntegerArray tools = new AtomicIntegerArray(3); // 0- random sum, 1-gcd, 2-next prime
+//	private AtomicIntegerArray tools = new AtomicIntegerArray(3); // 0- random sum, 1-gcd, 2-next prime
+	private int[] tools = new int[3];// 0- random sum, 1-gcd, 2-next prime
 	private List<ManufactoringPlan> plans = new ArrayList<>();
 	private BlockingDeque<Deferred> rsDeferreds = new LinkedBlockingDeque<>();
 	private BlockingDeque<Deferred> gcdDeferreds = new LinkedBlockingDeque<>();
@@ -45,9 +46,9 @@ public class Warehouse {
     public synchronized Deferred<Tool> acquireTool(String type) {
     	Deferred<Tool> retVal = new Deferred<Tool>();
 		if (type.equals("gs-driver")){
-			int last = tools.getAndDecrement(1);
-			if(last<0) {
-				tools.getAndIncrement(1);
+			tools[1]--;
+			if(tools[1]<0) {
+				tools[1]++;
 				gcdDeferreds.addLast(retVal);
 			}
 			else {
@@ -55,18 +56,18 @@ public class Warehouse {
 			}
 		}
 		else if (type.equals("rs-pliers")){
-			int last = tools.getAndDecrement(0);
-			if(last<0) {
-				tools.getAndIncrement(0);
+			tools[0]--;
+			if(tools[0]<0) {
+				tools[0]++;
 				rsDeferreds.addLast(retVal);
 			}
 			else {
 				retVal.resolve(new RandomSumPliers());
 			}
 		} else if (type.equals("np-hammer")) {
-			int last = tools.getAndDecrement(2);
-			if(last<0) {
-				tools.getAndIncrement(2);
+			tools[2]--;
+			if(tools[2]<0) {
+				tools[2]++;
 				npDeferreds.addLast(retVal);
 			}
 			else {
@@ -83,23 +84,29 @@ public class Warehouse {
 	*/
     public synchronized void releaseTool(Tool tool){
 		if (tool.getType().equals("gs-driver")){
-			int amount = tools.incrementAndGet(1);
+			if (tools[1] == -1)
+				System.out.println("");
+			tools[1]++;
 			if (gcdDeferreds.size()>0) {
 				gcdDeferreds.pop().resolve(new GcdScrewDriver());
-				tools.decrementAndGet(1);
+				tools[1]--;
 			}
 		}
 		else if (tool.getType().equals("rs-pliers")){
-			int amount = tools.incrementAndGet(0);
+			if (tools[0] == -1)
+				System.out.println("");
+			tools[0]++;
 			if (rsDeferreds.size()>0) {
 				rsDeferreds.pop().resolve(new RandomSumPliers());
-				tools.decrementAndGet(0);
+				tools[0]--;
 			}
 		} else if (tool.getType().equals("np-hammer")) {
-			int amount = tools.incrementAndGet(2);
+			if (tools[2] == -1)
+				System.out.println("");
+			tools[2]++;
 			if (npDeferreds.size()>0) {
 				npDeferreds.pop().resolve(new NextPrimeHammer());
-				tools.decrementAndGet(2);
+				tools[2]--;
 			}
 		}
 	}
@@ -133,11 +140,11 @@ public class Warehouse {
 	*/
     public void addTool(Tool tool, int qty){
     	if (tool.getType().equals("gs-driver"))
-    		tools.addAndGet(1,qty);
+    		tools[1]+=qty;
     	else if (tool.getType().equals("rs-pliers"))
-			tools.addAndGet(0,qty);
+			tools[0]+=qty;
 		else if (tool.getType().equals("np-hammer"))
-			tools.addAndGet(2,qty);
+			tools[2]+=qty;
 	}
 
 }

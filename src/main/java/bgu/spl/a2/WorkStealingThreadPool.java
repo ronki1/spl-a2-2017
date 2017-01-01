@@ -114,10 +114,15 @@ public class WorkStealingThreadPool {
      * @param t
      */
     protected void taskRescheduled(Task t) {
+        System.out.println("Task Rescheduled");
         vm.inc();
     }
 
-    public Processor[] getProcessors() {
+    protected Processor[] getProcessors() {
         return processors;
+    }
+
+    protected void subTaskFinished(Task t) {
+        vm.inc();
     }
 }

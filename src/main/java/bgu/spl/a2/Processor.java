@@ -1,5 +1,6 @@
 package bgu.spl.a2;
 
+import bgu.spl.a2.sim.tasks.WarehouseWorkerTask;
 import bgu.spl.a2.test.MergeSort;
 
 import java.util.ArrayDeque;
@@ -24,10 +25,10 @@ public class Processor implements Runnable {
 
     private final WorkStealingThreadPool pool;
     private final int id;
-    protected BlockingDeque<Task> tasks;
+    private BlockingDeque<Task> tasks;
     private int stealingCounter = 0;
     private int nextVictimNumber;
-    protected boolean stealing = false;
+    private boolean stealing = false;
     private boolean running = false;
     private boolean executing = false;
 
@@ -64,30 +65,33 @@ public class Processor implements Runnable {
             while (running) {
                 try {
                     Task k = tasks.peekFirst();
+                    System.out.println("K is " + k);
+                    System.out.println("K waits for" +k.waitingCounter);
                     if (k != null) { //TODO what if stolen during check? cannot be stolen since stealing is done only if there is more than one task
                         if(k.getResult().isResolved()) {
                             this.removeFromQueue(k);
                         }
-                        else if(k.getWaitingCounter() > 0) {
+                        else if(k.waitingCounter > 0) {
                             rescheduleTask(k);
                         }
                         else { //can run
-                            if(k.isStarted()) {
+                            if(k.started) {
                                 if(k.runCallback == true) {
                                     k.runCallback = false;
                                     if(k.whenResolvedCallback!= null) k.whenResolvedCallback.run();
                                 }
                             }
                             else {
-                                k.setRunning(true);
-                                k.setStarted(true);
+                                k.running = (true);
+                                k.started = (true);
                                 k.start();
                             }
                         }
                     }
-                    if (tasks.size() == 0 || (tasks.size()==1 && tasks.getFirst().getWaitingCounter()>0)) {
+                    if (tasks.size() == 0 || (tasks.size()==1 && tasks.getFirst().waitingCounter>0)) {
                         startSteal();
-                        if(tasks.size() == 0) pool.vm.await(pool.vm.getVersion() + 1);
+                        if(tasks.size() == 0)
+                            pool.vm.await(pool.vm.getVersion() + 1);
                     }
                 }catch (InterruptedException e) {
                     System.out.println("Thread " + this.id + " interrupted");
@@ -117,7 +121,7 @@ public class Processor implements Runnable {
     }
 
     protected void rescheduleTask(Task t) {
-        t.setRunning(false);
+        t.running = (false);
         if (tasks.remove(t)) {
             tasks.addLast(t);
             pool.taskRescheduled(t);
@@ -168,22 +172,12 @@ public class Processor implements Runnable {
         int stealGoal = target.numOfTasksLeft()/2, alreadyStolen = 0;
         ArrayList<Task> targets = new ArrayList<>();
         outer: while (target.numOfTasksLeft() >1 && alreadyStolen<=stealGoal) {
-//            try {
             boolean stealSuccess = steal(target);
                     if (stealSuccess) {
                         alreadyStolen += 1;
-                    } else {//if stealing not successful
-                        /*if (alreadyStolen == 0) { //if hasn't been able to steal any
-                            continue outer;
-                        } else { //if was able to steal something
-                            break outer;
-                        }*/
+                    } else {
                         break outer;
                     }
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//                //TODO what if interrupted because of new task while waiting for stealing
-//            }
         }
             stealing = false;
         nextVictimNumber = (nextVictimNumber+1)%pool.getProcessors().length;
@@ -201,6 +195,11 @@ public class Processor implements Runnable {
         return success;
     }
 
+    /**
+     * Steals from a target processor
+     * @param targetP processor to steal from
+     * @return if steal was successful
+     */
     private boolean steal(Processor targetP) {
         Task t = targetP.getLastTask();
         if(t==null) return false;
@@ -215,14 +214,6 @@ public class Processor implements Runnable {
     }
 
     /**
-     * transfer task to stealing thread. Synchronization is needed in order to avoid stealing of task that starts being executed.
-     * @param t task to be transferred
-     * @return if transfer succeeded
-     */
-    /*protected synchronized boolean tranferTask(Task t) {
-
-    }*/
-    /**
      * setter
      * @param num
      */
@@ -230,11 +221,23 @@ public class Processor implements Runnable {
         this.nextVictimNumber = num;
     }
 
-    public int getNextVictimNumber() {
+    /**
+     * getter
+     * @return thread number of next victim
+     */
+    protected int getNextVictimNumber() {
         return nextVictimNumber;
     }
 
-    public boolean isexecuting() {
+    /**
+     *
+     * @return if processor is executing
+     */
+    protected boolean isexecuting() {
         return executing;
+    }
+
+    protected void subTaskFinished(Task t) {
+        this.pool.subTaskFinished(t);
     }
 }

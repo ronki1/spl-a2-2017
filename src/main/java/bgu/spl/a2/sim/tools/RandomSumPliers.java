@@ -22,12 +22,5 @@ public class RandomSumPliers implements Tool {
         }
 
         return sum;
-//        Random random = new Random(p.getFinalId());
-//        long total = 0;
-//        long amount = p.getFinalId() % 10000;
-//        for (int i = 0; i < amount; i++) {
-//           total += random.nextInt();
-//        }
-//        return total;
     }
 }

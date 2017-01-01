@@ -31,6 +31,11 @@ public class VersionMonitor {
         notifyAll();
     }
 
+    /**
+     * awaits until a requested version number is reached
+     * @param version
+     * @throws InterruptedException
+     */
     public void await(int version) throws InterruptedException {
         while (this.version<version) {
             synchronized (this) {

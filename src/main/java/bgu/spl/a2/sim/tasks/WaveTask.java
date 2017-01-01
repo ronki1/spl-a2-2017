@@ -17,6 +17,12 @@ public class WaveTask extends Task<List<Product>> {
     private List<Wave> waves;
     private Warehouse warehouse;
 
+    /**
+     * Constructor
+     * @param index
+     * @param waves
+     * @param warehouse
+     */
     public WaveTask(int index, List<Wave> waves, Warehouse warehouse) {
         this.index = index;
         this.waves = waves;

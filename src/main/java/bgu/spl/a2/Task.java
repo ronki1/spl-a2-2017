@@ -1,5 +1,6 @@
 package bgu.spl.a2;
 
+import bgu.spl.a2.sim.tasks.WarehouseWorkerTask;
 import bgu.spl.a2.test.MergeSort;
 
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public abstract class Task<R> {
     protected Deferred defferedObj = new Deferred();
     private int numOfSubtasksWaiting = 0;
     private CountDownLatch latch;
-    private int waitingCounter;
+    protected int waitingCounter;
     protected ArrayList<Task> tasksDependsOn = new ArrayList<>();
     protected boolean runCallback = false;
     /**
@@ -69,6 +70,7 @@ public abstract class Task<R> {
         }
 //        if(this.getWaitingCounter()>0) handler.rescheduleTask(this);
         System.out.println("task order spawned");
+        System.out.println("Spawned Task is " + this);
 //        for (Task t2 : handler.tasks) {
             //System.out.println("Task Rescheduled, Processor "+ handler +" tasks: "+t2.toString());
 //        }
@@ -124,32 +126,54 @@ public abstract class Task<R> {
     /**
      * callback location when task has finished, Synchronized to prevent countdown errors.
      * @param t
-     * TODO maybe use latches?
      */
-    protected synchronized void subTaskFinished(Task t) {
+    private synchronized void subTaskFinished(Task t) {
         waitingCounter--;
         if(waitingCounter == 0) {
             runCallback = true;
         }
+        this.handler.subTaskFinished(this);
     }
 
-    public int getWaitingCounter() {
+    /**
+     * getter
+     * @return
+     */
+    private int getWaitingCounter() {
         return waitingCounter;
     }
 
-    public void setRunning(boolean running) {
+    /**
+     * setter
+     * @param running
+     */
+    private void setRunning(boolean running) {
         this.running = running;
     }
 
-    public void setStarted(boolean started) {
+    /**
+     * setter
+     * @param started
+     */
+    private void setStarted(boolean started) {
         this.started = started;
     }
 
-    public boolean isStarted() {
+    /**
+     * getter
+     * @return
+     */
+    private boolean isStarted() {
         return started;
     }
 
-    public boolean isRunning() {
+    /**
+     * getter
+     * @return
+     */
+    private boolean isRunning() {
         return running;
     }
+
+
 }
