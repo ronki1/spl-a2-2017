@@ -16,7 +16,9 @@ import bgu.spl.a2.sim.tools.Tool;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -135,7 +137,11 @@ public class Simulator {
             }
 
             attachWorkStealingThreadPool(newPool);
-            start();
+            ConcurrentLinkedQueue<Product> SimulationResult;
+            SimulationResult = start();
+            FileOutputStream fout = new FileOutputStream("result.ser");
+            ObjectOutputStream oos = new ObjectOutputStream(fout);
+            oos.writeObject(SimulationResult);
         } catch (IOException e) {
             e.printStackTrace();
         }

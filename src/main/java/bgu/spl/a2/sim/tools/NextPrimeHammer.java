@@ -36,7 +36,7 @@ public class NextPrimeHammer implements Tool {
 
     private boolean isPrime(long value) {
         long sq = (long) Math.sqrt(value);
-        for (long i = 2; i < sq; i++) {
+        for (long i = 2; i <= sq; i++) {
             if (value % i == 0) {
                 return false;
             }

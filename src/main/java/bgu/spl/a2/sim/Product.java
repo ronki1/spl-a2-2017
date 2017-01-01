@@ -1,12 +1,13 @@
 package bgu.spl.a2.sim;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * A class that represents a product produced during the simulation.
  */
-public class Product {
+public class Product implements Serializable {
 	private String name;
 	private long startId;
 	private long finalId;
